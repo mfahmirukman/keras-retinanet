@@ -17,6 +17,7 @@ limitations under the License.
 import argparse
 import os
 import sys
+import cv2
 
 # Allow relative imports when being executed as script.
 if __name__ == "__main__" and __package__ is None:
@@ -54,7 +55,7 @@ def create_generator(args, preprocess_image):
 
         validation_generator = CocoGenerator(
             args.coco_path,
-            'val2017',
+            'test',
             shuffle_groups=False,
             **common_args
         )

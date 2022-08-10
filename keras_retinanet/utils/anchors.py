@@ -18,6 +18,7 @@ import numpy as np
 from tensorflow import keras
 
 from ..utils.compute_overlap import compute_overlap
+from ..utils.compute_overlap_vectorized import compute_overlap_vectorized
 
 
 class AnchorParameters:
@@ -136,7 +137,8 @@ def compute_gt_annotations(
         argmax_overlaps_inds: ordered overlaps indices
     """
 
-    overlaps = compute_overlap(anchors.astype(np.float64), annotations.astype(np.float64))
+    # overlaps = compute_overlap(anchors.astype(np.float64), annotations.astype(np.float64))
+    overlaps = compute_overlap_vectorized(anchors.astype(np.float64), annotations.astype(np.float64))
     argmax_overlaps_inds = np.argmax(overlaps, axis=1)
     max_overlaps = overlaps[np.arange(overlaps.shape[0]), argmax_overlaps_inds]
 
@@ -221,6 +223,7 @@ def anchors_for_shape(
 
     if pyramid_levels is None:
         pyramid_levels = [3, 4, 5, 6, 7]
+        # pyramid_levels = [6, 7]
 
     if anchor_params is None:
         anchor_params = AnchorParameters.default

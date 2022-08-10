@@ -48,6 +48,17 @@ from ..utils.image import random_visual_effect_generator
 from ..utils.model import freeze as freeze_model
 from ..utils.tf_version import check_tf_version
 from ..utils.transform import random_transform_generator
+from tensorflow.compat.v1 import ConfigProto
+from tensorflow.compat.v1 import InteractiveSession
+
+
+def fix_gpu():
+    config = ConfigProto()
+    config.gpu_options.allow_growth = True
+    session = InteractiveSession(config=config)
+
+
+fix_gpu()
 
 
 def makedirs(path):
@@ -265,7 +276,7 @@ def create_generators(args, preprocess_image):
 
         train_generator = CocoGenerator(
             args.coco_path,
-            'train2017',
+            'train',
             transform_generator=transform_generator,
             visual_effect_generator=visual_effect_generator,
             **common_args
@@ -273,7 +284,7 @@ def create_generators(args, preprocess_image):
 
         validation_generator = CocoGenerator(
             args.coco_path,
-            'val2017',
+            'valid',
             shuffle_groups=False,
             **common_args
         )
@@ -435,6 +446,7 @@ def parse_args(args):
     parser.add_argument('--lr',               help='Learning rate.', type=float, default=1e-5)
     parser.add_argument('--optimizer-clipnorm', help='Clipnorm parameter for  optimizer.', type=float, default=0.001)
     parser.add_argument('--snapshot-path',    help='Path to store snapshots of models during training (defaults to \'./snapshots\')', default='./snapshots')
+    parser.add_argument('--summary-path',    help='Path to store model summary (defaults to \'./snapshots\')', default='./')
     parser.add_argument('--tensorboard-dir',  help='Log directory for Tensorboard output', default='')  # default='./logs') => https://github.com/tensorflow/tensorflow/pull/34870
     parser.add_argument('--tensorboard-freq', help='Update frequency for Tensorboard output. Values \'epoch\', \'batch\' or int', default='epoch')
     parser.add_argument('--no-snapshots',     help='Disable saving snapshots.', dest='snapshots', action='store_false')
@@ -485,7 +497,7 @@ def main(args=None):
     # create the model
     if args.snapshot is not None:
         print('Loading model, this may take a second...')
-        model            = models.load_model(args.snapshot, backbone_name=args.backbone)
+        model            = models.load_model(args.snapshot, backbone_name=args.backbone, freeze_backbone=False)
         training_model   = model
         anchor_params    = None
         pyramid_levels   = None
@@ -502,6 +514,7 @@ def main(args=None):
             weights = backbone.download_imagenet()
 
         print('Creating model, this may take a second...')
+        print(train_generator.num_classes())
         model, training_model, prediction_model = create_models(
             backbone_retinanet=backbone.retinanet,
             num_classes=train_generator.num_classes(),
@@ -515,6 +528,9 @@ def main(args=None):
 
     # print model summary
     print(model.summary())
+    
+    with open(os.path.join(args.summary_path, "summary.txt"), 'w') as f:
+        model.summary(print_fn=lambda x: f.write(x + '\n'))
 
     # this lets the generator compute backbone layer shapes using the actual backbone model
     if 'vgg' in args.backbone or 'densenet' in args.backbone:
@@ -534,9 +550,10 @@ def main(args=None):
     if not args.compute_val_loss:
         validation_generator = None
 
+    print(training_model)
     # start training
-    return training_model.fit_generator(
-        generator=train_generator,
+    return training_model.fit(
+        x=train_generator,
         steps_per_epoch=args.steps,
         epochs=args.epochs,
         verbose=1,

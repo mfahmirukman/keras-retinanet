@@ -20,6 +20,7 @@ import argparse
 import os
 import sys
 import cv2
+import numpy as np
 
 # Set keycodes for changing images
 # 81, 83 are left and right arrows on linux in Ascii code (probably not needed)
@@ -199,7 +200,8 @@ def run(generator, args, anchor_params, pyramid_levels):
     i = 0
     while True:
         # load the data
-        image       = generator.load_image(i)
+        raw_image       = generator.load_image(i)
+        image = np.float32(raw_image)
         annotations = generator.load_annotations(i)
         if len(annotations['labels']) > 0 :
             # apply random transformations
