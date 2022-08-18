@@ -446,7 +446,7 @@ def parse_args(args):
     parser.add_argument('--lr',               help='Learning rate.', type=float, default=1e-5)
     parser.add_argument('--optimizer-clipnorm', help='Clipnorm parameter for  optimizer.', type=float, default=0.001)
     parser.add_argument('--snapshot-path',    help='Path to store snapshots of models during training (defaults to \'./snapshots\')', default='./snapshots')
-    parser.add_argument('--summary-path',    help='Path to store model summary (defaults to \'./snapshots\')', default='./')
+    # parser.add_argument('--summary-path',    help='Path to store model summary (defaults to \'./snapshots\')', default='./')
     parser.add_argument('--tensorboard-dir',  help='Log directory for Tensorboard output', default='')  # default='./logs') => https://github.com/tensorflow/tensorflow/pull/34870
     parser.add_argument('--tensorboard-freq', help='Update frequency for Tensorboard output. Values \'epoch\', \'batch\' or int', default='epoch')
     parser.add_argument('--no-snapshots',     help='Disable saving snapshots.', dest='snapshots', action='store_false')
@@ -529,7 +529,7 @@ def main(args=None):
     # print model summary
     print(model.summary())
     
-    with open(os.path.join(args.summary_path, "summary.txt"), 'w') as f:
+    with open(os.path.join(args.snapshot_path, "summary.txt"), 'w') as f:
         model.summary(print_fn=lambda x: f.write(x + '\n'))
 
     # this lets the generator compute backbone layer shapes using the actual backbone model
